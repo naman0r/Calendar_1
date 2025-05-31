@@ -1,5 +1,7 @@
 package model;
 
+import model.Location;
+
 
 import java.time.LocalDateTime;
 
@@ -18,7 +20,7 @@ public interface IEvent {
    *  -
    *  -
    */
-  
+
   String getSubject();
   LocalDateTime getStart();
   LocalDateTime getEnd();  // May be null if all-day
@@ -27,6 +29,6 @@ public interface IEvent {
   String getStatus(); // "public" or "private"
   boolean isAllDay();
   boolean overlapsWith(IEvent other);
-  boolean equals(IEvent other);
+  boolean equals(Object other);
   int hashCode();
 }
