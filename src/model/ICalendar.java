@@ -11,7 +11,6 @@ import java.util.List;
 public interface ICalendar {
 
   boolean addEvent(IEvent event);
-
   boolean removeEvent(IEvent event);
   List<IEvent> getEventsOn(LocalDate date);
   List<IEvent> getEventsBetween(LocalDateTime start, LocalDateTime end);

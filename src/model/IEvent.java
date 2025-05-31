@@ -18,15 +18,15 @@ public interface IEvent {
    *  -
    *  -
    */
-
-
+  
   String getSubject();
   LocalDateTime getStart();
   LocalDateTime getEnd();  // May be null if all-day
   String getDescription();
   String getLocation();
   String getStatus(); // "public" or "private"
-
   boolean isAllDay();
   boolean overlapsWith(IEvent other);
+  boolean equals(IEvent other);
+  int hashCode();
 }
