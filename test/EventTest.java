@@ -64,7 +64,7 @@ public class EventTest {
             .to(end)
             .build();
 
-    assertTrue(event1.equals(event2));
+    assertEquals(event1, event2);
     assertEquals(event1.hashCode(), event2.hashCode());
   }
 
