@@ -76,6 +76,11 @@ public final class SeriesEvent extends AbstractEvent {
       return this;
     }
 
+    public Builder seriesId(Integer seriesId) {
+      this.seriesId = seriesId;
+      return this;
+    }
+
     public SeriesEvent build() {
       if (subject == null || start == null || end == null) {
         throw new IllegalStateException("Subject, start, and end required");
@@ -85,5 +90,6 @@ public final class SeriesEvent extends AbstractEvent {
       }
       return new SeriesEvent(this);
     }
+
   }
 }
