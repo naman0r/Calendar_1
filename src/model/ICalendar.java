@@ -1,80 +1,41 @@
 package model;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * This is the interface for a Calendar, and represents a Calendar.
- */
 public interface ICalendar {
-
   /**
-   * Adds a Single Evemt, returns true if added, false if not added.
-   * Will return false if the event is duplicated (subject + start + end).
-   * @param event the Event being added.
-   * @return boolean representing if event was added successfully or not.
+   * Adds an event to the calendar.
+   * Returns true if added, false if a duplicate exists.
    */
   boolean addEvent(IEvent event);
 
-
   /**
-   * Removes a specific event, returns true if successfully removed.
-   * @param event the Event being removed.
-   * @return true if event was removed.
+   * Returns all events on the given date.
    */
-  boolean removeEvent(IEvent event);
+  List<IEvent> getEventsOnDate(LocalDate date);
 
   /**
-   * Finds all events on a specific date.
-   * @param date The Date that is being searched for.
-   * @return a list of Events on that date.
+   * Returns all events in the interval [start, end].
    */
-  List<IEvent> getEventsOn(LocalDate date);
+  List<IEvent> getEventsInRange(LocalDateTime start, LocalDateTime end);
 
   /**
-   * Finds all events in an interval (inclusive interval)
-   * @param start start date.
-   * @param end end date.
-   * @return a list of {@code IEvent}s in the specified interval,
+   * Checks if there is any event at the given date and time.
    */
-  List<IEvent> getEventsBetween(LocalDateTime start, LocalDateTime end);
-
+  boolean isBusyAt(LocalDateTime dateTime);
 
   /**
-   * Find an event by Subject, Start datetime and end datetime.
-   * @param subject the subject of event.
-   * @param start start time of the event.
-   * @param end end time of the event.
-   * @return return ONE event if found.
+   * Finds a unique event by subject and start/end time (for editing).
+   * Returns null if not found or if not unique.
    */
   IEvent findEvent(String subject, LocalDateTime start, LocalDateTime end);
 
-
   /**
-   * Returns true if the user is busy at this date/time.
-   * @param dateTime the date/time being searched for,
-   * @return boolean, true if busy, false if free.
+   * Remove an event from the calendar.
    */
-  boolean isBusy(LocalDateTime dateTime);
+  boolean removeEvent(IEvent event);
 
-
-  /**
-   * Edits an event, returns true if successful. 
-   * @param event old event
-   * @param property old property
-   * @param newValue new object,
-   * @return true if successful.
-   */
-  boolean editEvent(IEvent event, String property, Object newValue);
-
-
-  /**
-   * Gets all the events in a calendar.
-   * @return list of the events in the calendar.
-   */
-  List<IEvent> getAllEvents();
+  //  can add more methods as required for editing series, etc.
 }
-
-

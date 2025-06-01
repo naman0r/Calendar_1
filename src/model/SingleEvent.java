@@ -1,13 +1,11 @@
-package model2;
+package model;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public final class SeriesEvent extends AbstractEvent {
-  private static final AtomicInteger NEXT_SERIES_ID = new AtomicInteger(1);
+public final class SingleEvent extends AbstractEvent {
 
   // Only constructed by the Builder
-  private SeriesEvent(Builder builder) {
+  private SingleEvent(Builder builder) {
     super(
             builder.subject,
             builder.start,
@@ -15,7 +13,7 @@ public final class SeriesEvent extends AbstractEvent {
             builder.description,
             builder.location,
             builder.status,
-            builder.seriesId
+            null // SingleEvent: always null seriesId
     );
   }
 
@@ -40,11 +38,8 @@ public final class SeriesEvent extends AbstractEvent {
     private String description;
     private Location location;
     private Status status;
-    private Integer seriesId;
 
-    private Builder() {
-      this.seriesId = NEXT_SERIES_ID.getAndIncrement();
-    }
+    private Builder() {}
 
     public Builder subject(String subject) {
       this.subject = subject;
@@ -76,14 +71,16 @@ public final class SeriesEvent extends AbstractEvent {
       return this;
     }
 
-    public SeriesEvent build() {
-      if (subject == null || start == null || end == null) {
-        throw new IllegalStateException("Subject, start, and end required");
+    public SingleEvent build() {
+      if (subject == null || start == null) {
+        throw new IllegalStateException("Subject and start time required");
       }
-      if (!start.toLocalDate().equals(end.toLocalDate())) {
-        throw new IllegalArgumentException("SeriesEvent must start and end on the same day");
+      // If end is null, set to all-day default (8am-5pm)
+      if (end == null) {
+        this.start = this.start.toLocalDate().atTime(8, 0);
+        this.end = this.start.toLocalDate().atTime(17, 0);
       }
-      return new SeriesEvent(this);
+      return new SingleEvent(this);
     }
   }
 }

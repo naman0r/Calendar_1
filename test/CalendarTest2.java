@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 import static org.junit.Assert.*;
 
-import model2.Calendar;
-import model2.SingleEvent;
+import model.Calendar;
+import model.SingleEvent;
 
 public class CalendarTest2 {
 
