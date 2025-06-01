@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
 
+import model2.Location;
+import model2.Status;
+
 /**
  * Immutable Event class representing a calendar event.
  */

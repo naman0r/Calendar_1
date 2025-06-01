@@ -1,7 +1,5 @@
 package model;
 
-import model.Location;
-
 
 import java.time.LocalDateTime;
 

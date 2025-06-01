@@ -1,8 +1,8 @@
 import static org.junit.Assert.*;
 
 import model.Event;
-import model.Location;
-import model.Status;
+import model2.Location;
+import model2.Status;
 import org.junit.Test;
 
 import java.time.LocalDateTime;

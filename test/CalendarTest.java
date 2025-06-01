@@ -3,8 +3,8 @@ import model.Calendar;
 import model.Event;
 import model.ICalendar;
 import model.IEvent;
-import model.Location;
-import model.Status;
+import model2.Location;
+import model2.Status;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -183,6 +183,7 @@ public class CalendarTest {
 
     // Attempt to edit event2 so it would be a duplicate of event1
     boolean edited = calendar.editEvent(event2, "subject", "Dup");
+    System.out.println(edited);
     assertFalse(edited); // Not allowed
   }
 }
