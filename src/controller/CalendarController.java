@@ -41,7 +41,7 @@ public class CalendarController implements IController{
         }
         cmd.execute(this.model, this.view);
         if (line.equalsIgnoreCase("exit")) {
-          break;
+          break; // terminates the application.....
         }
 
       }

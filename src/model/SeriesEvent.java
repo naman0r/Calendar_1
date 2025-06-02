@@ -1,10 +1,8 @@
 package model;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class SeriesEvent extends AbstractEvent {
-  private static final AtomicInteger NEXT_SERIES_ID = new AtomicInteger(1);
 
   // Only constructed by the Builder
   private SeriesEvent(Builder builder) {
@@ -48,7 +46,7 @@ public final class SeriesEvent extends AbstractEvent {
     private Integer seriesId;
 
     private Builder() {
-      this.seriesId = NEXT_SERIES_ID.getAndIncrement();
+      // No auto-assignment of seriesId - Calendar class will provide it
     }
 
     public Builder subject(String subject) {

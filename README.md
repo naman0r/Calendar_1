@@ -322,3 +322,20 @@ cleanup:
 find /Users/namanrusia/Developer/Calendar_1 -name "\*.class" -delete
 
 `find . -name "*.class" -delete`
+
+```
+
+cd src
+javac */*.java *.java
+java CalendarApp --mode interactive
+        OR
+java CalendarApp --mode headless ../test_commands.txt # should be moved to the res/ folder.
+
+
+# to delete all the files java just created...... (after app is done running)
+
+find . -name "*.class" -delete
+
+
+
+```

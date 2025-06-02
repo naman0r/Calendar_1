@@ -25,7 +25,7 @@ public class CalendarCommandParser {
 
     // Handle exit command
     if (trimmed.equalsIgnoreCase("exit")) {
-      return new ExitCommand();
+          return new ExitCommand();
     }
 
     // Create event commands
@@ -357,7 +357,7 @@ public class CalendarCommandParser {
     try {
       return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
     } catch (Exception e) {
-      return null;
+      return null; // not formatted correctly.
     }
   }
 
