@@ -189,10 +189,6 @@ public class Calendar implements ICalendar {
   }
 
 
-
-
-
-  // STUBS FOR UNIMPLEMENTED METHODS!!!!!
   @Override
   public boolean editEvent() {
     return false;

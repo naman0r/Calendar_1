@@ -23,12 +23,24 @@ public final class SingleEvent extends AbstractEvent {
 
   @Override
   public boolean isAllDay() {
-    return false;
+    if (start == null || end == null) return false;
+    // Check if this is an 8am-5pm event (all-day event)
+    return start.getHour() == 8 && start.getMinute() == 0 && start.getSecond() == 0 &&
+           end.getHour() == 17 && end.getMinute() == 0 && end.getSecond() == 0 &&
+           start.toLocalDate().equals(end.toLocalDate());
   }
 
   @Override
   public boolean overlapsWith(IEvent other) {
-    return false;
+    if (other == null || other.getStart() == null) return false;
+    
+    LocalDateTime thisStart = this.getStart();
+    LocalDateTime thisEnd = this.getEnd() != null ? this.getEnd() : thisStart.plusHours(9);
+    LocalDateTime otherStart = other.getStart();
+    LocalDateTime otherEnd = other.getEnd() != null ? other.getEnd() : otherStart.plusHours(9);
+    
+    // Events overlap if: this starts before other ends AND this ends after other starts
+    return thisStart.isBefore(otherEnd) && thisEnd.isAfter(otherStart);
   }
 
   public static class Builder {

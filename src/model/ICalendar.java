@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
+/** */
 public interface ICalendar {
   /**
    * Adds an event to the calendar.
