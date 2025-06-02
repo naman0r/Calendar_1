@@ -311,10 +311,14 @@ The application provides clear error messages for:
 
 ## Ok i dont know how to run this without doing this,
 
-javac _.java _/\*.java && java CalendarApp --mode interactive
+``
 
-javac _.java _/\*.java && java CalendarApp --mode headless file.txt
+`cd src && javac *.java */*.java && java CalendarApp --mode headless ../test_commands.txt`
+
+`cd src && javac *.java */*.java && java CalendarApp --mode interactive`
 
 cleanup:
 
 find /Users/namanrusia/Developer/Calendar_1 -name "\*.class" -delete
+
+`find . -name "*.class" -delete`
