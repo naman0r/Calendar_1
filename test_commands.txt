@@ -1,0 +1,10 @@
+create event "Team Meeting" from 2024-01-15T10:00 to 2024-01-15T11:00
+create event Lunch on 2024-01-15
+create event "Daily Standup" from 2024-01-15T09:00 to 2024-01-15T09:30 repeats MWF for 5 times
+print events on 2024-01-15
+print events on 2024-01-17
+show status on 2024-01-15T10:30
+show status on 2024-01-15T14:00
+edit event subject "Team Meeting" from 2024-01-15T10:00 to 2024-01-15T11:00 with "Project Review"
+print events on 2024-01-15
+exit 

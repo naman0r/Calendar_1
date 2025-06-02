@@ -25,12 +25,17 @@ public final class SeriesEvent extends AbstractEvent {
 
   @Override
   public boolean isAllDay() {
-    return false;
+    // An event is all-day if it starts at 8am and ends at 5pm on the same day
+    return start.getHour() == 8 && start.getMinute() == 0 &&
+           end.getHour() == 17 && end.getMinute() == 0 &&
+           start.toLocalDate().equals(end.toLocalDate());
   }
 
   @Override
   public boolean overlapsWith(IEvent other) {
-    return false;
+    if (other == null) return false;
+    // Two events overlap if one starts before the other ends
+    return this.start.isBefore(other.getEnd()) && other.getStart().isBefore(this.end);
   }
 
   public static class Builder {
@@ -88,6 +93,15 @@ public final class SeriesEvent extends AbstractEvent {
       if (!start.toLocalDate().equals(end.toLocalDate())) {
         throw new IllegalArgumentException("SeriesEvent must start and end on the same day");
       }
+      
+      // Set defaults if not provided
+      if (location == null) {
+        this.location = new Location("");
+      }
+      if (status == null) {
+        this.status = Status.PUBLIC;
+      }
+      
       return new SeriesEvent(this);
     }
 

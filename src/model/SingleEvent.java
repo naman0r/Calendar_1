@@ -23,24 +23,17 @@ public final class SingleEvent extends AbstractEvent {
 
   @Override
   public boolean isAllDay() {
-    if (start == null || end == null) return false;
-    // Check if this is an 8am-5pm event (all-day event)
-    return start.getHour() == 8 && start.getMinute() == 0 && start.getSecond() == 0 &&
-           end.getHour() == 17 && end.getMinute() == 0 && end.getSecond() == 0 &&
+    // An event is all-day if it starts at 8am and ends at 5pm on the same day
+    return start.getHour() == 8 && start.getMinute() == 0 &&
+           end.getHour() == 17 && end.getMinute() == 0 &&
            start.toLocalDate().equals(end.toLocalDate());
   }
 
   @Override
   public boolean overlapsWith(IEvent other) {
-    if (other == null || other.getStart() == null) return false;
-    
-    LocalDateTime thisStart = this.getStart();
-    LocalDateTime thisEnd = this.getEnd() != null ? this.getEnd() : thisStart.plusHours(9);
-    LocalDateTime otherStart = other.getStart();
-    LocalDateTime otherEnd = other.getEnd() != null ? other.getEnd() : otherStart.plusHours(9);
-    
-    // Events overlap if: this starts before other ends AND this ends after other starts
-    return thisStart.isBefore(otherEnd) && thisEnd.isAfter(otherStart);
+    if (other == null) return false;
+    // Two events overlap if one starts before the other ends
+    return this.start.isBefore(other.getEnd()) && other.getStart().isBefore(this.end);
   }
 
   public static class Builder {
@@ -92,6 +85,15 @@ public final class SingleEvent extends AbstractEvent {
         this.start = this.start.toLocalDate().atTime(8, 0);
         this.end = this.start.toLocalDate().atTime(17, 0);
       }
+      
+      // Set defaults if not provided
+      if (location == null) {
+        this.location = new Location("");
+      }
+      if (status == null) {
+        this.status = Status.PUBLIC;
+      }
+      
       return new SingleEvent(this);
     }
   }

@@ -1,0 +1,3 @@
+create event "Team Meeting" from 2024-01-15T10:00 to 2024-01-15T11:00
+print events on 2024-01-15
+exit 

@@ -29,3 +29,7 @@ bin/
 .DS_Store
 
 .idea/
+
+
+# do not want the submission zip files to show up in the git repo
+*.zip
