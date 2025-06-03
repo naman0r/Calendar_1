@@ -1,40 +1,31 @@
 package model;
 
 /**
- * Represents a location for an event, which can be either virtual, physical, or a custom string.
+ * Represents a location for an event: either VIRTUAL or PHYSICAL.
  */
-public class Location {
-  private final String locationValue;
-  
-  public static final Location VIRTUAL = new Location("virtual");
-  public static final Location PHYSICAL = new Location("physical");
-  
-  public Location(String location) {
-    this.locationValue = location == null ? "" : location;
-  }
-  
-  public static Location valueOf(String location) {
-    if (location == null || location.trim().isEmpty()) {
-      return new Location("");
+public enum Location {
+  VIRTUAL,
+  PHYSICAL;
+
+  /**
+   * Parse a user‐provided string into one of the two valid enum constants.
+   * @throws IllegalArgumentException if the string is null/empty or not
+   *                                  "virtual" / "physical" (case‐insensitive).
+   */
+  public static Location valueOfStrict(String s) {
+    if (s == null || s.trim().isEmpty()) {
+      throw new IllegalArgumentException("Location cannot be null or empty");
     }
-    return new Location(location.trim().toLowerCase());
+    switch (s.trim().toLowerCase()) {
+      case "virtual":  return VIRTUAL;
+      case "physical": return PHYSICAL;
+      default:
+        throw new IllegalArgumentException("Unsupported location: " + s);
+    }
   }
-  
+
   @Override
   public String toString() {
-    return locationValue;
-  }
-  
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!(obj instanceof Location)) return false;
-    Location other = (Location) obj;
-    return locationValue.equals(other.locationValue);
-  }
-  
-  @Override
-  public int hashCode() {
-    return locationValue.hashCode();
+    return name().toLowerCase(); // so that VIRTUAL→"virtual", PHYSICAL→"physical"
   }
 }

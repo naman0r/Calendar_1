@@ -2,9 +2,12 @@ package model;
 
 import java.time.LocalDateTime;
 
+/**
+ * A single occurrence in a recurring series. Must start/end on the same calendar day.
+ * Location and Status remain null unless explicitly set by the caller.
+ */
 public final class SeriesEvent extends AbstractEvent {
 
-  // Only constructed by the Builder
   private SeriesEvent(Builder builder) {
     super(
             builder.subject,
@@ -23,85 +26,41 @@ public final class SeriesEvent extends AbstractEvent {
 
   @Override
   public boolean isAllDay() {
-    // An event is all-day if it starts at 8am and ends at 5pm on the same day
-    return start.getHour() == 8 && start.getMinute() == 0 &&
-           end.getHour() == 17 && end.getMinute() == 0 &&
-           start.toLocalDate().equals(end.toLocalDate());
+    if (start == null || end == null) return false;
+    return (start.getHour() == 8 && start.getMinute() == 0)
+            && (end.getHour()   == 17 && end.getMinute()   == 0)
+            && start.toLocalDate().equals(end.toLocalDate());
   }
 
   @Override
   public boolean overlapsWith(IEvent other) {
     if (other == null) return false;
-    // Two events overlap if one starts before the other ends
+    if (other.getEnd() == null) return false;
     return this.start.isBefore(other.getEnd()) && other.getStart().isBefore(this.end);
   }
 
-  public static class Builder {
-    private String subject;
-    private LocalDateTime start;
-    private LocalDateTime end;
-    private String description;
-    private Location location;
-    private Status status;
-    private Integer seriesId;
-
-    private Builder() {
-      // No auto-assignment of seriesId - Calendar class will provide it
-    }
-
-    public Builder subject(String subject) {
-      this.subject = subject;
+  public static class Builder extends AbstractEvent.Builder<Builder> {
+    @Override
+    protected Builder self() {
       return this;
     }
 
-    public Builder start(LocalDateTime start) {
-      this.start = start;
-      return this;
-    }
-
-    public Builder end(LocalDateTime end) {
-      this.end = end;
-      return this;
-    }
-
-    public Builder description(String description) {
-      this.description = description;
-      return this;
-    }
-
-    public Builder location(Location location) {
-      this.location = location;
-      return this;
-    }
-
-    public Builder status(Status status) {
-      this.status = status;
-      return this;
-    }
-
-    public Builder seriesId(Integer seriesId) {
-      this.seriesId = seriesId;
-      return this;
-    }
-
+    @Override
     public SeriesEvent build() {
-      if (subject == null || start == null || end == null) {
-        throw new IllegalStateException("Subject, start, and end required");
+      if (subject == null || subject.trim().isEmpty()) {
+        throw new IllegalStateException("Subject is required for SeriesEvent");
+      }
+      if (start == null || end == null) {
+        throw new IllegalStateException("Both start and end are required for SeriesEvent");
       }
       if (!start.toLocalDate().equals(end.toLocalDate())) {
-        throw new IllegalArgumentException("SeriesEvent must start and end on the same day");
+        throw new IllegalArgumentException("SeriesEvent must start and end on the same date");
       }
-      
-      // Set defaults if not provided
-      if (location == null) {
-        this.location = new Location("");
+      if (seriesId == null) {
+        throw new IllegalStateException("seriesId must be provided by Calendar");
       }
-      if (status == null) {
-        this.status = Status.PUBLIC;
-      }
-      
+      // Location and Status are left exactly as caller provided (possibly null).
       return new SeriesEvent(this);
     }
-
   }
 }

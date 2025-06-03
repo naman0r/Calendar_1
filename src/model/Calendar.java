@@ -1,330 +1,353 @@
 package model;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * A single‐calendar implementation.  Location and Status are now passed in
+ * as enums (or null). If null, the event simply has no location/status.
+ */
 public class Calendar implements ICalendar {
 
   private static int series_num = 1;
-  public final ArrayList<IEvent> events;
+  private final ArrayList<IEvent> events;
 
   public Calendar() {
     this.events = new ArrayList<>();
   }
 
+  @Override
   public boolean addEvent(IEvent event) {
-
     for (IEvent e : this.events) {
       if (e.equals(event)) {
         return false;
       }
     }
-
     this.events.add(event);
     return true;
   }
 
-
-  public boolean makeEvent(String subject, String description, LocalDateTime start, LocalDateTime end,
-                           String location, String status) {
-
-    if (end == null) {
-      // 8 am to 5 pm all day event.
-      end = start.withHour(17).withMinute(0).withSecond(0);
-      start = start.withHour(8).withMinute(0).withSecond(0);
-    }
-
-    IEvent eventToBeAdded = SingleEvent.getBuilder().subject(subject)
-            .description(description).start(start).end(end)
-            .location(location != null ? new Location(location) : new Location(""))
-            .status(status != null ? new Status(status) : Status.PUBLIC).build();
-
-    for (IEvent e : this.events) {
-      if (e.equals(eventToBeAdded)) {
-        return false;
-      }
-    }
-
-    // need to rreplace this with insertion sort insertion.
-    events.add(eventToBeAdded);
-    events.sort((a, b) -> a.getStart().compareTo(b.getStart()));
-    return true;
-  }
-
-  // creates recurring events on Start - end on 'Days' days count times.
+  /**
+   * Create a single (possibly multi‐hour) event. If end == null, defaults to 08:00→17:00.
+   * Location and Status may be null (no defaults).
+   */
   @Override
-  public boolean makeEvent(String subject, String description, LocalDateTime start, LocalDateTime end,
-                           List<DayOfWeek> days, int count) {
-
-
-    // subject needs to exist, and start needs to exist, and days needs to exist,
-    // and count should be possitive non-zero.
-    if (subject == null || start == null ||
-            days == null || days.isEmpty() || count <= 0) {
-      throw new IllegalArgumentException("Invalid Arguments to make a series event" +
-              "that occurs a certain number of times on some days");
-
-    }
-
-    if (end == null) {
-      // making it an 8-5 event if start or end is null.
-      end = start.withHour(17).withMinute(0).withSecond(0);
-      start = start.withHour(8).withMinute(0).withSecond(0);
-    }
-
-    ArrayList<IEvent> eventsToBeAdded = new ArrayList<IEvent>();
-    int occurances = 0;
-    LocalDate currentDate = start.toLocalDate();
-
-    while (occurances < count) {
-      for (DayOfWeek d : days) {
-        if (occurances >= count) break;
-        
-        // find the next date with this DayOfWeek, starting from currentDate
-        LocalDate nextDate = getNextOrSame(currentDate, d);
-        LocalDateTime nextStart = nextDate.atTime(start.toLocalTime());
-        LocalDateTime nextEnd = nextDate.atTime(end.toLocalTime());
-
-        IEvent proposed = SeriesEvent.getBuilder()
-                .seriesId(series_num)
-                .subject(subject)
-                .description(description)
-                .start(nextStart)
-                .end(nextEnd)
-                .location(new Location(""))
-                .status(Status.PUBLIC)
-                .build();
-
-        for (IEvent e : this.events) {
-          if (e.equals(proposed)) {
-            // duplicate check, fail all....
-            return false;
-
-          }
-        }
-
-        eventsToBeAdded.add(proposed);
-        occurances++;
-      }
-      // Move to next week after processing all days
-      currentDate = currentDate.plusWeeks(1);
-    }
-
-    // if it has not failed yet, means that no duplicates, events can be added.
-    // add the events...
-    this.events.addAll(eventsToBeAdded);
-    this.events.sort((a, b) -> a.getStart().compareTo(b.getStart()));
-    series_num++; // increment the series_num of the CALENDAR class,
-    // not an object of the class, so this means we should not use the this keyword.
-    return true;
-
-  }
-
   public boolean makeEvent(
           String subject,
           String description,
           LocalDateTime start,
           LocalDateTime end,
-          List<DayOfWeek> days,
-          LocalDateTime endDate) {
-    // just figure out the number of occurances, and then call the method above (to
-    // create a series event with an explicit number of count days
-
-    // Input checks
-    if (subject == null || start == null || days == null || days.isEmpty() || endDate == null) {
-      throw new IllegalArgumentException("Invalid arguments to make a series event until end date");
-    }
-
-    // All-day event logic if end is null
-    if (end == null) {
-      end = start.withHour(17).withMinute(0).withSecond(0);
-      start = start.withHour(8).withMinute(0).withSecond(0);
-    }
-
-    // Find the number of occurrences
-    int occurrences = 0;
-    LocalDate currentDate = start.toLocalDate();
-    LocalDate lastDate = endDate.toLocalDate();
-    
-    while (!currentDate.isAfter(lastDate)) {
-      for (DayOfWeek d : days) {
-        LocalDate nextDate = getNextOrSame(currentDate, d);
-        // Only count events within the allowed date range
-        if (!nextDate.isAfter(lastDate)) {
-          occurrences++;
-        }
-      }
-      currentDate = currentDate.plusWeeks(1);
-    }
-
-    if (occurrences == 0) return false; // No events in range
-
-    // Use the existing method
-    return makeEvent(subject, description, start, end, days, occurrences);
-
-  }
-
-
-  // duplicate code, remove from interface and remove this method (or make
-  // end date == null case call this method instead)
-  public boolean makeEvent(String subject, LocalDateTime start) {
+          Location location,
+          Status status
+  ) {
     if (subject == null || start == null) {
-      throw new IllegalArgumentException("Invalid arguments to make a" +
-              "Single event until start date");
+      throw new IllegalArgumentException("Subject and start must be non‐null");
     }
 
-    IEvent toBeAdded = SingleEvent.getBuilder().subject(subject)
-            .start(start.withHour(8).withMinute(0).withSecond(0))
-            .end(start.withHour(17).withMinute(0).withSecond(0))
+    // If no end, default to 08:00→17:00 on that start date
+    if (end == null) {
+      LocalDateTime base = start.toLocalDate().atStartOfDay();
+      start = base.withHour(8).withMinute(0);
+      end   = base.withHour(17).withMinute(0);
+    }
+
+    IEvent candidate = SingleEvent.getBuilder()
+            .subject(subject)
+            .description(description)
+            .start(start)
+            .end(end)
+            .location(location) // may be null
+            .status(status)     // may be null
             .build();
 
+    // Duplicate‐check
     for (IEvent e : this.events) {
-      if (e.equals(toBeAdded)) {
+      if (e.equals(candidate)) {
         return false;
       }
-
     }
-    this.events.add(toBeAdded);
+
+    this.events.add(candidate);
     this.events.sort((a, b) -> a.getStart().compareTo(b.getStart()));
     return true;
   }
 
+  /**
+   * Create a recurring series specified by exact count. Each occurrence is single‐day.
+   * If end == null, default each occurrence to 08:00→17:00.  Location & Status stay null.
+   */
+  @Override
+  public boolean makeEvent(
+          String subject,
+          String description,
+          LocalDateTime start,
+          LocalDateTime end,
+          List<java.time.DayOfWeek> days,
+          int count
+  ) {
+    if (subject == null || start == null || days == null || days.isEmpty() || count <= 0) {
+      throw new IllegalArgumentException("Invalid arguments for makeEvent(series by count)");
+    }
+
+    // If no end, default each to 08:00→17:00
+    if (end == null) {
+      LocalDateTime base = start.toLocalDate().atStartOfDay();
+      start = base.withHour(8).withMinute(0);
+      end   = base.withHour(17).withMinute(0);
+    }
+
+    List<IEvent> toAdd = new ArrayList<>();
+    int occurrences = 0;
+    LocalDate cursor = start.toLocalDate();
+
+    while (occurrences < count) {
+      for (java.time.DayOfWeek d : days) {
+        if (occurrences >= count) break;
+        LocalDate nextDate = getNextOrSame(cursor, d);
+        LocalDateTime nextStart = nextDate.atTime(start.toLocalTime());
+        LocalDateTime nextEnd   = nextDate.atTime(end.toLocalTime());
+
+        IEvent candidate = SeriesEvent.getBuilder()
+                .seriesId(series_num)
+                .subject(subject)
+                .description(description)
+                .start(nextStart)
+                .end(nextEnd)
+                .location(null) // remain null
+                .status(null)   // remain null
+                .build();
+
+        // Duplicate check against existing events
+        for (IEvent e : this.events) {
+          if (e.equals(candidate)) {
+            return false; // abort entire series
+          }
+        }
+        toAdd.add(candidate);
+        occurrences++;
+      }
+      cursor = cursor.plusWeeks(1);
+    }
+
+    this.events.addAll(toAdd);
+    this.events.sort((a, b) -> a.getStart().compareTo(b.getStart()));
+    series_num++;
+    return true;
+  }
+
+  /**
+   * Create a recurring series until endDate (date‐bounded). Each occurrence is single‐day.
+   * If end == null, default each to 08:00→17:00. Location & Status stay null.
+   */
+  @Override
+  public boolean makeEvent(
+          String subject,
+          String description,
+          LocalDateTime start,
+          LocalDateTime end,
+          List<java.time.DayOfWeek> days,
+          LocalDateTime endDate
+  ) {
+    if (subject == null || start == null || days == null || days.isEmpty() || endDate == null) {
+      throw new IllegalArgumentException("Invalid arguments for makeEvent(series until endDate)");
+    }
+
+    // If no end, default each to 08:00→17:00
+    if (end == null) {
+      LocalDateTime base = start.toLocalDate().atStartOfDay();
+      start = base.withHour(8).withMinute(0);
+      end   = base.withHour(17).withMinute(0);
+    }
+
+    // Count occurrences up to endDate
+    int occurrences = 0;
+    java.time.LocalDate cursor = start.toLocalDate();
+    java.time.LocalDate last    = endDate.toLocalDate();
+
+    while (!cursor.isAfter(last)) {
+      for (java.time.DayOfWeek d : days) {
+        java.time.LocalDate nextDate = getNextOrSame(cursor, d);
+        if (!nextDate.isAfter(last)) occurrences++;
+      }
+      cursor = cursor.plusWeeks(1);
+    }
+    if (occurrences == 0) return false;
+
+    return makeEvent(subject, description, start, end, days, occurrences);
+  }
+
+  /**
+   * Create an all‐day event on a single date (08:00→17:00). Location & Status stay null.
+   */
+  @Override
+  public boolean makeEvent(String subject, LocalDateTime start) {
+    if (subject == null || start == null) {
+      throw new IllegalArgumentException("Invalid arguments for all‐day makeEvent");
+    }
+    LocalDateTime base = start.toLocalDate().atStartOfDay();
+    IEvent candidate = SingleEvent.getBuilder()
+            .subject(subject)
+            .start(base.withHour(8).withMinute(0))
+            .end(base.withHour(17).withMinute(0))
+            .location(null) // stay null
+            .status(null)   // stay null
+            .build();
+
+    for (IEvent e : this.events) {
+      if (e.equals(candidate)) {
+        return false;
+      }
+    }
+    this.events.add(candidate);
+    this.events.sort((a, b) -> a.getStart().compareTo(b.getStart()));
+    return true;
+  }
 
   @Override
   public boolean editEvent() {
-    // This method signature is incomplete - not implementing as interface needs improvement
+    // Not used directly; see editSeriesEvent(...) for actual editing logic.
     return false;
   }
 
   @Override
-  public boolean editSeriesEvent(String property, String subject, LocalDateTime start, LocalDateTime end, String newValue, char type) {
-    // Find the event to edit
-    IEvent targetEvent = findEvent(subject, start, end);
-    if (targetEvent == null) {
-      return false; // Event not found
+  public boolean editSeriesEvent(
+          String property,
+          String subject,
+          LocalDateTime start,
+          LocalDateTime end,
+          String newValue,
+          char type
+  ) {
+    IEvent target = findEvent(subject, start, end);
+    if (target == null) {
+      return false; // not found or not unique
     }
-    
-    if (targetEvent.getSeriesId() == null) {
-      // Single event - just edit this one
-      return editSingleEvent(targetEvent, property, newValue);
+
+    if (target.getSeriesId() == null) {
+      return editSingleEvent(target, property, newValue);
     } else {
-      // Series event - handle based on type
-      return editEventSeries(targetEvent, property, newValue, type);
+      return editEventSeries(target, property, newValue, type);
     }
   }
-  
-  private boolean editSingleEvent(IEvent event, String property, String newValue) {
-    // Remove old event
-    this.events.remove(event);
-    
-    // Create new event with updated property
-    IEvent updatedEvent = createUpdatedEvent(event, property, newValue);
-    if (updatedEvent == null) {
-      // Re-add original event if update failed
-      this.events.add(event);
+
+  private boolean editSingleEvent(IEvent original, String property, String newValue) {
+    this.events.remove(original);
+    IEvent updated = createUpdatedEvent(original, property, newValue);
+    if (updated == null) {
+      this.events.add(original);
       return false;
     }
-    
-    // Check for duplicates
     for (IEvent e : this.events) {
-      if (e.equals(updatedEvent)) {
-        // Re-add original event and fail
-        this.events.add(event);
+      if (e.equals(updated)) {
+        this.events.add(original);
         return false;
       }
     }
-    
-    this.events.add(updatedEvent);
+    this.events.add(updated);
     this.events.sort((a, b) -> a.getStart().compareTo(b.getStart()));
     return true;
   }
-  
-  private boolean editEventSeries(IEvent targetEvent, String property, String newValue, char type) {
-    Integer seriesId = targetEvent.getSeriesId();
+
+  @SuppressWarnings("unchecked")
+  private boolean editEventSeries(
+          IEvent target,
+          String property,
+          String newValue,
+          char type
+  ) {
+    Integer sid = target.getSeriesId();
     List<IEvent> seriesEvents = this.events.stream()
-        .filter(e -> seriesId.equals(e.getSeriesId()))
-        .collect(Collectors.toList());
-    
-    List<IEvent> eventsToEdit = new ArrayList<>();
-    
-    switch (type) {
-      case 'f': // Forward - this event and all after it
-        eventsToEdit = seriesEvents.stream()
-            .filter(e -> !e.getStart().isBefore(targetEvent.getStart()))
+            .filter(e -> sid.equals(e.getSeriesId()))
             .collect(Collectors.toList());
+
+    List<IEvent> toEdit = new ArrayList<>();
+    switch (type) {
+      case 'f':
+        toEdit = seriesEvents.stream()
+                .filter(e -> !e.getStart().isBefore(target.getStart()))
+                .collect(Collectors.toList());
         break;
-      case 'e': // Entire series
-        eventsToEdit = seriesEvents;
+      case 'e':
+        toEdit = new ArrayList<>(seriesEvents);
         break;
       default:
-        return false; // Invalid type
+        return false;
     }
-    
-    // Remove old events
-    this.events.removeAll(eventsToEdit);
-    
-    // Create updated events
-    List<IEvent> updatedEvents = new ArrayList<>();
-    for (IEvent event : eventsToEdit) {
-      IEvent updated = createUpdatedEvent(event, property, newValue);
+
+    this.events.removeAll(toEdit);
+
+    List<IEvent> updatedList = new ArrayList<>();
+    for (IEvent evt : toEdit) {
+      IEvent updated = createUpdatedEvent(evt, property, newValue);
       if (updated == null) {
-        // Restore original events and fail
-        this.events.addAll(eventsToEdit);
+        this.events.addAll(toEdit);
         return false;
       }
-      updatedEvents.add(updated);
+      updatedList.add(updated);
     }
-    
-    // Check for duplicates
-    for (IEvent updated : updatedEvents) {
-      for (IEvent existing : this.events) {
-        if (existing.equals(updated)) {
-          // Restore original events and fail
-          this.events.addAll(eventsToEdit);
+    for (IEvent upd : updatedList) {
+      for (IEvent ex : this.events) {
+        if (ex.equals(upd)) {
+          this.events.addAll(toEdit);
           return false;
         }
       }
     }
-    
-    // If start time is being changed, these events may no longer be a series
-    if ("start".equals(property)) {
-      // Assign new series IDs if needed
-      int newSeriesId = series_num++;
-      List<IEvent> newSeriesEvents = new ArrayList<>();
-      for (IEvent event : updatedEvents) {
-        newSeriesEvents.add(createEventWithNewSeriesId(event, newSeriesId));
+
+    if ("start".equalsIgnoreCase(property)) {
+      int newSid = series_num++;
+      List<IEvent> reassign = new ArrayList<>();
+      for (IEvent upd : updatedList) {
+        reassign.add(SeriesEvent.getBuilder()
+                .subject(upd.getSubject())
+                .start(upd.getStart())
+                .end(upd.getEnd())
+                .description(upd.getDescription())
+                .location(upd.getLocation()) // may be null
+                .status(upd.getStatus())     // may be null
+                .seriesId(newSid)
+                .build());
       }
-      updatedEvents = newSeriesEvents;
+      updatedList = reassign;
     }
-    
-    this.events.addAll(updatedEvents);
+
+    this.events.addAll(updatedList);
     this.events.sort((a, b) -> a.getStart().compareTo(b.getStart()));
     return true;
   }
-  
+
+  /**
+   * Rebuild a SingleEvent or SeriesEvent but with one field changed.
+   * Returns null on failure (invalid property or parse failure, etc.).
+   */
+  @SuppressWarnings("unchecked")
   private IEvent createUpdatedEvent(IEvent original, String property, String newValue) {
     try {
       switch (property.toLowerCase()) {
         case "subject":
-          return createEventWithProperty(original, "subject", newValue);
+          return recreateWithProperty(original, "subject", (Object) newValue);
         case "start":
-          LocalDateTime newStart = LocalDateTime.parse(newValue);
-          return createEventWithProperty(original, "start", newStart);
+          LocalDateTime ns = LocalDateTime.parse(newValue);
+          return recreateWithProperty(original, "start", ns);
         case "end":
-          LocalDateTime newEnd = LocalDateTime.parse(newValue);
-          return createEventWithProperty(original, "end", newEnd);
+          LocalDateTime ne = LocalDateTime.parse(newValue);
+          return recreateWithProperty(original, "end", ne);
         case "description":
-          return createEventWithProperty(original, "description", newValue);
+          return recreateWithProperty(original, "description", (Object) newValue);
         case "location":
-          return createEventWithProperty(original, "location", new Location(newValue));
+          // Parse into enum; if newValue is empty or null, location becomes null
+          Location loc = (newValue == null || newValue.trim().isEmpty())
+                  ? null
+                  : Location.valueOfStrict(newValue);
+          return recreateWithProperty(original, "location", loc);
         case "status":
-          return createEventWithProperty(original, "status", new Status(newValue));
+          Status st = (newValue == null || newValue.trim().isEmpty())
+                  ? null
+                  : Status.valueOfStrict(newValue);
+          return recreateWithProperty(original, "status", st);
         default:
           return null;
       }
@@ -332,100 +355,85 @@ public class Calendar implements ICalendar {
       return null;
     }
   }
-  
-  private IEvent createEventWithProperty(IEvent original, String property, Object value) {
+
+  /**
+   * Helper to rebuild either a SingleEvent or SeriesEvent from 'original', changing one property.
+   */
+  private IEvent recreateWithProperty(IEvent original, String property, Object value) {
     if (original.getSeriesId() != null) {
-      SeriesEvent.Builder builder = SeriesEvent.getBuilder()
-          .subject(original.getSubject())
-          .start(original.getStart())
-          .end(original.getEnd())
-          .description(original.getDescription())
-          .location(new Location(original.getLocation()))
-          .status(new Status(original.getStatus()))
-          .seriesId(original.getSeriesId());
-      
+      SeriesEvent.Builder b = SeriesEvent.getBuilder()
+              .subject(original.getSubject())
+              .start(original.getStart())
+              .end(original.getEnd())
+              .description(original.getDescription())
+              .location(original.getLocation())
+              .status(original.getStatus())
+              .seriesId(original.getSeriesId());
+
       switch (property) {
-        case "subject": builder.subject((String) value); break;
-        case "start": builder.start((LocalDateTime) value); break;
-        case "end": builder.end((LocalDateTime) value); break;
-        case "description": builder.description((String) value); break;
-        case "location": builder.location((Location) value); break;
-        case "status": builder.status((Status) value); break;
+        case "subject":     b.subject((String) value); break;
+        case "start":       b.start((LocalDateTime) value); break;
+        case "end":         b.end((LocalDateTime) value); break;
+        case "description": b.description((String) value); break;
+        case "location":    b.location((Location) value); break;
+        case "status":      b.status((Status) value); break;
       }
-      return builder.build();
+      return b.build();
     } else {
-      SingleEvent.Builder builder = SingleEvent.getBuilder()
-          .subject(original.getSubject())
-          .start(original.getStart())
-          .end(original.getEnd())
-          .description(original.getDescription())
-          .location(new Location(original.getLocation()))
-          .status(new Status(original.getStatus()));
-      
+      SingleEvent.Builder b = SingleEvent.getBuilder()
+              .subject(original.getSubject())
+              .start(original.getStart())
+              .end(original.getEnd())
+              .description(original.getDescription())
+              .location(original.getLocation())
+              .status(original.getStatus());
+
       switch (property) {
-        case "subject": builder.subject((String) value); break;
-        case "start": builder.start((LocalDateTime) value); break;
-        case "end": builder.end((LocalDateTime) value); break;
-        case "description": builder.description((String) value); break;
-        case "location": builder.location((Location) value); break;
-        case "status": builder.status((Status) value); break;
+        case "subject":     b.subject((String) value); break;
+        case "start":       b.start((LocalDateTime) value); break;
+        case "end":         b.end((LocalDateTime) value); break;
+        case "description": b.description((String) value); break;
+        case "location":    b.location((Location) value); break;
+        case "status":      b.status((Status) value); break;
       }
-      return builder.build();
+      return b.build();
     }
-  }
-  
-  private IEvent createEventWithNewSeriesId(IEvent original, int newSeriesId) {
-    return SeriesEvent.getBuilder()
-        .subject(original.getSubject())
-        .start(original.getStart())
-        .end(original.getEnd())
-        .description(original.getDescription())
-        .location(new Location(original.getLocation()))
-        .status(new Status(original.getStatus()))
-        .seriesId(newSeriesId)
-        .build();
   }
 
   @Override
   public List<IEvent> getEventsOnDate(LocalDate date) {
     return this.events.stream()
-        .filter(event -> {
-          LocalDate eventStart = event.getStart().toLocalDate();
-          LocalDate eventEnd = event.getEnd().toLocalDate();
-          return !date.isBefore(eventStart) && !date.isAfter(eventEnd);
-        })
-        .collect(Collectors.toList());
+            .filter(e -> {
+              LocalDate s = e.getStart().toLocalDate();
+              LocalDate en = e.getEnd().toLocalDate();
+              return !date.isBefore(s) && !date.isAfter(en);
+            })
+            .collect(Collectors.toList());
   }
 
   @Override
   public List<IEvent> getEventsInRange(LocalDateTime start, LocalDateTime end) {
     return this.events.stream()
-        .filter(event -> {
-          // Event overlaps with range if:
-          // event start is before range end AND event end is after range start
-          return event.getStart().isBefore(end) && event.getEnd().isAfter(start);
-        })
-        .collect(Collectors.toList());
+            .filter(e -> e.getStart().isBefore(end) && e.getEnd().isAfter(start))
+            .collect(Collectors.toList());
   }
 
   @Override
   public boolean isBusyAt(LocalDateTime dateTime) {
     return this.events.stream()
-        .anyMatch(event -> 
-            !dateTime.isBefore(event.getStart()) && dateTime.isBefore(event.getEnd()));
+            .anyMatch(e -> !dateTime.isBefore(e.getStart()) && dateTime.isBefore(e.getEnd()));
   }
 
   @Override
   public IEvent findEvent(String subject, LocalDateTime start, LocalDateTime end) {
-    List<IEvent> matches = this.events.stream()
-        .filter(event -> 
-            event.getSubject().equals(subject) && 
-            event.getStart().equals(start) && 
-            event.getEnd().equals(end))
-        .collect(Collectors.toList());
-    
-    // Return null if not found or not unique
-    return matches.size() == 1 ? matches.get(0) : null;
+    List<IEvent> found = this.events.stream()
+            .filter(e ->
+                    e.getSubject().equals(subject) &&
+                            e.getStart().equals(start) &&
+                            e.getEnd().equals(end)
+            )
+            .collect(Collectors.toList());
+    return (found.size() == 1) ? found.get(0) : null;
   }
 
   @Override
@@ -433,9 +441,11 @@ public class Calendar implements ICalendar {
     return this.events.remove(event);
   }
 
-
-  private static LocalDate getNextOrSame(LocalDate from, DayOfWeek desired) {
-    int daysDiff = (desired.getValue() - from.getDayOfWeek().getValue() + 7) % 7;
-    return from.plusDays(daysDiff);
+  private static java.time.LocalDate getNextOrSame(
+          java.time.LocalDate from,
+          java.time.DayOfWeek desired
+  ) {
+    int diff = (desired.getValue() - from.getDayOfWeek().getValue() + 7) % 7;
+    return from.plusDays(diff);
   }
 }

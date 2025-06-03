@@ -3,14 +3,18 @@ package model;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-abstract class AbstractEvent implements IEvent {
+/**
+ * An abstract base class for any calendar event.  Location and Status are now
+ * nullable; no default is filled in if the caller never sets them.
+ */
+public abstract class AbstractEvent implements IEvent {
   protected final String subject;
   protected final LocalDateTime start;
   protected final LocalDateTime end;
   protected final String description;
-  protected final Location location;
-  protected final Status status;
-  protected final Integer seriesId;
+  protected final Location location; // may be null
+  protected final Status status;     // may be null
+  protected final Integer seriesId;  // null if not part of a series
 
   protected AbstractEvent(
           String subject,
@@ -19,69 +23,66 @@ abstract class AbstractEvent implements IEvent {
           String description,
           Location location,
           Status status,
-          Integer seriesId) {
+          Integer seriesId
+  ) {
+    if (subject == null || subject.trim().isEmpty()) {
+      throw new IllegalArgumentException("Subject cannot be null or empty");
+    }
+    if (start == null) {
+      throw new IllegalArgumentException("Start time cannot be null");
+    }
     this.subject = subject;
     this.start = start;
-    this.end = end;
-    this.description = description;
-    this.location = location;
-    this.status = status;
+    this.end = end; // may be null for “all‐day” logic upstream
+    this.description = (description == null) ? "" : description;
+    this.location = location; // now simply accept whatever caller passed (even null)
+    this.status   = status;   // likewise, can remain null
     this.seriesId = seriesId;
   }
-
 
   @Override
   public String getSubject() {
     return subject;
   }
 
-
   @Override
   public LocalDateTime getStart() {
     return start;
   }
-
 
   @Override
   public LocalDateTime getEnd() {
     return end;
   }
 
-
   @Override
   public String getDescription() {
     return description;
-
   }
-
 
   @Override
-  public String getLocation() {
-    return location.toString().toLowerCase();
+  public Location getLocation() {
+    return location; // may be null
   }
-
 
   @Override
-  public String getStatus() {
-    return status.toString().toLowerCase();
+  public Status getStatus() {
+    return status;   // may be null
   }
-
 
   @Override
   public Integer getSeriesId() {
     return seriesId;
   }
 
-
-  // Standard equals/hashCode, only on unique fields for calendar (subject, start, end)
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof IEvent)) return false;
     IEvent other = (IEvent) o;
-    return Objects.equals(subject, other.getSubject()) &&
-            Objects.equals(start, other.getStart()) &&
-            Objects.equals(end, other.getEnd());
+    return Objects.equals(subject, other.getSubject())
+            && Objects.equals(start, other.getStart())
+            && Objects.equals(end, other.getEnd());
   }
 
   @Override
@@ -89,17 +90,20 @@ abstract class AbstractEvent implements IEvent {
     return Objects.hash(subject, start, end);
   }
 
-
-  // Abstract builder (see below)
+  /**
+   * Abstract Builder for any concrete Event subclass.  Location and Status stay nullable.
+   */
   public static abstract class Builder<T extends Builder<T>> {
-    private LocalDateTime start;
-    private LocalDateTime end;
-    private String description;
-    private Location location;
-    private Status status;
-    Integer seriesId;
+    protected String subject;
+    protected LocalDateTime start;
+    protected LocalDateTime end;
+    protected String description;
+    protected Location location; // remain null if caller never sets
+    protected Status status;     // remain null if caller never sets
+    protected Integer seriesId;
 
     public T subject(String subject) {
+      this.subject = subject;
       return self();
     }
 
@@ -134,7 +138,6 @@ abstract class AbstractEvent implements IEvent {
     }
 
     protected abstract T self();
-
     public abstract AbstractEvent build();
   }
 }

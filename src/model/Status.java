@@ -1,40 +1,31 @@
 package model;
 
 /**
- * Represents the status of an event (public, private, or custom).
+ * Represents the status of an event: either PUBLIC or PRIVATE.
  */
-public class Status {
-  private final String statusValue;
-  
-  public static final Status PUBLIC = new Status("public");
-  public static final Status PRIVATE = new Status("private");
-  
-  public Status(String status) {
-    this.statusValue = status == null ? "public" : status;
-  }
-  
-  public static Status valueOf(String status) {
-    if (status == null || status.trim().isEmpty()) {
-      return PUBLIC;
+public enum Status {
+  PUBLIC,
+  PRIVATE;
+
+  /**
+   * Parse a user‐provided string into one of the two valid enum constants.
+   * @throws IllegalArgumentException if the string is null/empty or not
+   *                                  "public" / "private" (case‐insensitive).
+   */
+  public static Status valueOfStrict(String s) {
+    if (s == null || s.trim().isEmpty()) {
+      throw new IllegalArgumentException("Status cannot be null or empty");
     }
-    return new Status(status.trim().toLowerCase());
+    switch (s.trim().toLowerCase()) {
+      case "public":  return PUBLIC;
+      case "private": return PRIVATE;
+      default:
+        throw new IllegalArgumentException("Unsupported status: " + s);
+    }
   }
-  
+
   @Override
   public String toString() {
-    return statusValue;
-  }
-  
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!(obj instanceof Status)) return false;
-    Status other = (Status) obj;
-    return statusValue.equals(other.statusValue);
-  }
-  
-  @Override
-  public int hashCode() {
-    return statusValue.hashCode();
+    return name().toLowerCase(); // so that PUBLIC→"public", PRIVATE→"private"
   }
 }
