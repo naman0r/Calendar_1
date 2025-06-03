@@ -1,5 +1,7 @@
 package model;
 
+import java.util.Collection;
+
 /**
  * Represents a location for an event: either VIRTUAL or PHYSICAL.
  */
